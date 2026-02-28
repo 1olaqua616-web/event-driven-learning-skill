@@ -3,7 +3,7 @@ name: event-driven-learning
 description: 事件驱动深度学习回路。对话式苏格拉底教学——不输出长文，而是通过提问引导用户自己推导。五阶段闭合回路：事件锚定 → 概念扫盲 → 网状发散 → 深度分析 → Review。所有交付物以"你的回答"为主体。当用户说 /edl 时触发。
 ---
 
-# event-driven-learning — 事件驱动深度学习回路 v2
+# event-driven-learning — 事件驱动深度学习回路 v3
 
 ## 设计哲学
 
