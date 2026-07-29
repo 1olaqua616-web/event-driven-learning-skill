@@ -1,24 +1,36 @@
 # Event-Driven Learning Skill (事件驱动深度学习回路)
 
-一个用于 [Amp](https://ampcode.com) / Claude 的学习技能（Skill），帮助你从真实遇到的问题出发，通过五阶段闭合回路深入理解背后的原理。
+一个用于 [Amp](https://ampcode.com) / Claude 的学习技能（Skill），帮助你从真实遇到的问题出发，通过闭合回路深入理解背后的原理。
 
-## 五阶段回路
+v4 核心设计：**过程固定、方法可换**。学习过程（阶段流水线 + 验证闸门）不变；每阶段内用什么学习法（费曼、苏格拉底、worked-example……）是可换插件——感到漂移或假懂时，像 git 一样回退到阶段入口，换一个方法重跑。
+
+## 回路结构
 
 ```
-① 事件锚定 → ② 概念扫盲 → ③ 网状发散 → ④ 深度分析 → ⑤ Review 回路
-      ↑                                                        │
-      └──────────── 注释深化 / 新事件触发 ────────────────────────┘
+        ┌── 阶段 0: Golden Reference（隔离 subagent 生成"什么是正确的"）
+        ↓
+① 事件锚定 → ② 概念扫盲 → ③ 网状发散 → ④ 深度分析 → ⑤ 验证与 Review
+      ↑              ↑______________↑______________↑         │
+      │                （漂移 → 回退阶段入口换方法）            │
+      └──────────── 注释深化 / 新事件触发 ─────────────────────┘
 ```
 
-1. **事件锚定**：从你遇到的真实现象中提取核心问题
-2. **概念扫盲**：建立理解问题所需的最小知识节点
-3. **网状发散**：以核心概念为原点，向下（原理）、向上（应用）、横向（类比）、历史（演进）构建概念网络
-4. **深度分析**：用结构化辩证框架（Conclusion → First Principles → Reasoning → Counter-argument → Uncertainties → Next Steps）深入核心问题
-5. **Review 回路**：闭合回路，标注深化点，为下一轮螺旋做准备
+1. **Golden Reference（阶段 0）**：正式讲解前，由隔离 subagent 预生成正确因果链、常见误解清单、验证题——它是位于方法循环之外的评估者，漂移发生后用它拉回
+2. **事件锚定**：你先给出自己的猜想，再由 AI 提取核心问题
+3. **概念扫盲**：你先猜术语定义，AI 批改校正（而非单向罗列）
+4. **网状发散**：以核心概念为原点，向下（原理）、向上（应用）、横向（类比/同构）、历史（演进）构建概念网络
+5. **深度分析**：你先写结论，AI 用结构化辩证框架批改
+6. **验证与 Review**：闭卷验证 + 自评/实测差值记录（捕捉理解幻觉），然后才是总结归档
+
+## 设计依据
+
+- Bastani et al.《Generative AI Without Guardrails Can Harm Learning》(PNAS)：无护栏 AI 让练习 +48% 但独立考试 −17%（学生抄答案）；护栏版（不给全解、先交工作、预置解答与误解清单）消除了伤害
+- 学习科学四条主线：提取练习（testing effect）、生成效应、合意困难、有效失败——共同指向"学习效果与短期流畅度负相关"
+- 因此本 skill 的两条硬闸门：**你没先交出自己的尝试，AI 不讲**；**每阶段末闭卷验证，先自评再判分**
 
 ## 安装
 
-将 `SKILL.md` 复制到你的 Amp skills 目录：
+将 `SKILL.md` 复制到你的 skills 目录：
 
 ```bash
 # 创建目录
@@ -30,7 +42,7 @@ cp SKILL.md ~/.claude/skills/event-driven-learning/
 
 ## 使用
 
-在 Amp 对话中输入 `/edl` 或 `/event-driven-learning`，然后描述你遇到的问题即可。
+在对话中输入 `/edl` 或 `/event-driven-learning`，然后描述你遇到的问题即可。
 
 ## 💡 建议：保存思考过程与对话记录
 
@@ -51,12 +63,13 @@ cp SKILL.md ~/.claude/skills/event-driven-learning/
 
 ```
 ~/Desktop/{topic}-learning/
+├── golden-reference.md
+├── mastery-ledger.md
 ├── 00-核心回答总结.md
 ├── 01-概念知识网络图.md
-├── 02-{主题}完整链路.md
 ├── ...
-└── chat-log/                    ← 新增：对话记录
-    ├── session-01-YYYY-MM-DD.md  ← 完整对话（含你的提问和 AI 的回答）
+└── chat-log/                    ← 对话记录
+    ├── session-01-YYYY-MM-DD.md
     └── session-02-YYYY-MM-DD.md
 ```
 
@@ -68,11 +81,15 @@ cp SKILL.md ~/.claude/skills/event-driven-learning/
 
 | 文件 | 内容 |
 |------|------|
+| `golden-reference.md` | 阶段 0 产出：正确因果链 / 常见误解清单 / 验证题（隔离 subagent 生成） |
+| `mastery-ledger.md` | 掌握度账本：概念状态、自评−实测差、所用方法、通过/回退——只记录结构化数据，不做分析 |
 | `00-核心回答总结.md` | 每次 chat 核心回答的本地副本（含 Sources） |
 | `01-概念知识网络图.md` | 概念扫盲 + 网状发散产出 |
 | `02-{主题}完整链路.md` | 从底层到应用的完整解析 |
 | `03-{子话题}分析.md` | 各发散方向的专题分析 |
-| `04-深度分析与Review.md` | 结构化分析 + Review 标注 |
+| `04-深度分析与Review.md` | 结构化分析 + 漂移记录 + Review 标注 |
+
+账本是给后续独立盘点用的数据源：哪个方法对你长期有效，在 skill 之外定期观察，不在学习会话内评判。
 
 ## License
 
